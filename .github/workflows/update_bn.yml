@@ -31,10 +31,16 @@ jobs:
           cd epg-engine
           npm install
 
-      - name: Run Official Grabber for beIN MENA Arabic
+      - name: Update Channel List Natively (From README)
         run: |
           cd epg-engine
-          # Run the engine using exclusively the official MENA-AR channel mapping file
+          # This command dynamically parses and repairs any empty xmltv_id fields natively
+          npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
+
+      - name: Download the Guide Natively (From README)
+        run: |
+          cd epg-engine
+          # Grabs the newly completed channel mapping list
           npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
 
       - name: Clean Workspace Environment
