@@ -31,25 +31,17 @@ jobs:
           cd epg-engine
           npm install
 
-      - name: Run Official Grabber for bein.com
+      - name: Run Official Grabber for beIN MENA Arabic
         run: |
           cd epg-engine
-          npm run grab --- --sites=bein.com --output=../guide_raw.xml
+          # Run the engine using exclusively the official MENA-AR channel mapping file
+          npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
 
-      - name: Clean and Format Channel Names
+      - name: Clean Workspace Environment
         run: |
-          # Safe text transformation to map the names alongside the IDs natively
-          sed 's/channel="beINSports1.qa@MENA"><display-name>1<\/display-name>/channel="beINSports1.qa@MENA"><display-name>beIN Sports 1 HD<\/display-name>/g' guide_raw.xml > guide_step1.xml
-          sed 's/channel="beINSports2.qa@MENA"><display-name>2<\/display-name>/channel="beINSports2.qa@MENA"><display-name>beIN Sports 2 HD<\/display-name>/g' guide_step1.xml > guide_step2.xml
-          sed 's/channel="beINSports3.qa@MENA"><display-name>3<\/display-name>/channel="beINSports3.qa@MENA"><display-name>beIN Sports 3 HD<\/display-name>/g' guide_step2.xml > guide_step3.xml
-          sed 's/channel="beINSports4.qa@MENA"><display-name>4<\/display-name>/channel="beINSports4.qa@MENA"><display-name>beIN Sports 4 HD<\/display-name>/g' guide_step3.xml > guide_step4.xml
-          sed 's/channel="beINSportsMax1.qa@MENA"><display-name>1<\/display-name>/channel="beINSportsMax1.qa@MENA"><display-name>beIN Sports Max 1<\/display-name>/g' guide_step4.xml > guide_step5.xml
-          sed 's/channel="beINSportsMax2.qa@MENA"><display-name>2<\/display-name>/channel="beINSportsMax2.qa@MENA"><display-name>beIN Sports Max 2<\/display-name>/g' guide_step5.xml > guide.xml
-          
-          # Clean up temporary steps
-          rm -rf guide_raw.xml guide_step1.xml guide_step2.xml guide_step3.xml guide_step4.xml guide_step5.xml epg-engine
+          rm -rf epg-engine
 
-      - name: Deploy Clean Guide to GitHub Pages
+      - name: Deploy Native Guide to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
         with:
           folder: .
