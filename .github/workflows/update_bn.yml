@@ -19,33 +19,27 @@ jobs:
         run: |
           git clone --depth 1 -b master https://github.com/iptv-org/epg.git epg-engine
 
-      - name: Setup Node.js Environment
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: epg-engine/package-lock.json
 
-      - name: Install EPG Engine Dependencies
+      - name: Install & Run Grabber
         run: |
           cd epg-engine
           npm install
-
-      - name: Update Channel List
-        run: |
-          cd epg-engine
           npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
-
-      - name: Grab EPG Data
-        run: |
-          cd epg-engine
           npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
+
+      - name: Prepare Deployment
+        run: |
+          mkdir -p public
+          mv guide.xml public/guide.xml
 
       - name: Deploy to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
         with:
-          folder: .
+          folder: public
           branch: gh-pages
           target-folder: .
-          # This forces the action to include the guide.xml file
           single-commit: true
