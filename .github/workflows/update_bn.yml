@@ -2,34 +2,47 @@ name: Update beIN Sports EPG
 
 on:
   schedule:
-    - cron: '0 2 * * *' # Automatically runs every night at 2:00 AM
-  workflow_dispatch: # Gives you a manual button to run it whenever you want
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 jobs:
   grab-epg:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js environment
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install EPG Grabber
+        run: npm install -g @iptv-org/epg
 
       - name: Grab beIN Sports Guide
-        run: npm run grab -- --sites=bein.com
-
-      - name: Move guide to deployment folder
         run: |
-          mkdir -p build
-          mv guide.xml build/guide.xml
+          epg-grabber --site=bein.com --output=guide_raw.xml
+
+      - name: Clean and Format Channel Names
+        run: |
+          cat << 'EOF' > fix_names.js
+          const fs = require('fs');
+          let xml = fs.readFileSync('guide_raw.xml', 'utf8');
+          
+          // Replaces numeric names with clean, identifiable names based on site_id
+          xml = xml.replace(/<channel id="(.*?)">[\s\S]*?<display-name>(.*?)<\/display-name>/g, (match, id) => {
+            let cleanName = id.replace('.qa@MENA', '').replace('beINSports', 'beIN Sports ');
+            return `<channel id="${id}">\n    <display-name>${cleanName}</display-name>`;
+          });
+          
+          fs.writeFileSync('guide.xml', xml);
+          EOF
+          node fix_names.js
 
       - name: Deploy Finished Guide to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: jamesives/github-pages-deploy-action@v4
         with:
-          folder: build
+          folder: .
           branch: gh-pages
+          target-folder: .
