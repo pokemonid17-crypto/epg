@@ -1,0 +1,121 @@
+name: Test beIN Sports EPG Mapping
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  grab-epg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Your Repository
+        uses: actions/checkout@v4
+
+      - name: Clone Official IPTV-Org EPG Engine
+        run: |
+          git clone --depth 1 -b master https://github.com/iptv-org/epg.git epg-engine
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: epg-engine/package-lock.json
+
+      - name: Install EPG Engine Dependencies
+        run: |
+          cd epg-engine
+          npm install
+
+      - name: Update Channel List Natively
+        run: |
+          cd epg-engine
+          npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
+
+      - name: Download the Guide Natively
+        run: |
+          cd epg-engine
+          npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide_mapped.xml
+
+      - name: Advanced Wildcard Auto-Mapping
+        run: |
+          node -e '
+          const fs = require("fs");
+          let xml = fs.readFileSync("guide_mapped.xml", "utf8");
+
+          const baseChannels = [
+            { id: "beINSports1.qa@MENA", num: "1", type: "main" },
+            { id: "beINSports2.qa@MENA", num: "2", type: "main" },
+            { id: "beINSports3.qa@MENA", num: "3", type: "main" },
+            { id: "beINSports4.qa@MENA", num: "4", type: "main" },
+            { id: "beINSports5.qa@MENA", num: "5", type: "main" },
+            { id: "beINSports6.qa@MENA", num: "6", type: "main" },
+            { id: "beINSports7.qa@MENA", num: "7", type: "main" },
+            { id: "beINSports8.qa@MENA", num: "8", type: "main" },
+            { id: "beINSportsMax1.qa@MENA", num: "1", type: "max" },
+            { id: "beINSportsMax2.qa@MENA", num: "2", type: "max" },
+            { id: "beINSportsMax3.qa@MENA", num: "3", type: "max" },
+            { id: "beINSportsMax4.qa@MENA", num: "4", type: "max" },
+            { id: "beINSportsMax5.qa@MENA", num: "5", type: "max" },
+            { id: "beINSportsMax6.qa@MENA", num: "6", type: "max" },
+            { id: "beINSportsXtra1.qa@SD", num: "1", type: "xtra" },
+            { id: "beINSportsXtra2.qa@SD", num: "2", type: "xtra" },
+            { id: "beINSportsXtra3.qa@SD", num: "3", type: "xtra" }
+          ];
+
+          baseChannels.forEach(ch => {
+            const regex = new RegExp(`<channel id="${ch.id}">([\\s\\S]*?)</channel>`);
+            if (regex.test(xml)) {
+              let match = xml.match(regex)[0];
+              let generatedNames = [];
+
+              const prefixes = ["8K:", "4K:", "FHD:", "HD:", "SD:", "NM:", "AR:", ""];
+              
+              const rawSuffixes = [
+                "HD", "hd", "RAW", "raw", "Raw", 
+                "AR hd", "AR hevc", "AR Raw", "AR raw", "AR HEVC",
+                "HEVC", "hevc", "4K", "4k"
+              ];
+
+              prefixes.forEach(p => {
+                let cleanP = p ? p + " " : "";
+                rawSuffixes.forEach(s => {
+                  let cleanS = s ? " " + s : "";
+                  
+                  if (ch.type === "main") {
+                    generatedNames.push(`  <display-name>${cleanP}beIN SP⚽RTS ${ch.num}${cleanS}</display-name>`);
+                    generatedNames.push(`  <display-name>${cleanP}beIN SPORTS ${ch.num}${cleanS}</display-name>`);
+                  } else if (ch.type === "max") {
+                    generatedNames.push(`  <display-name>${cleanP}beIN SP⚽RTS MAX ${ch.num}${cleanS}</display-name>`);
+                    generatedNames.push(`  <display-name>${cleanP}beIN SPORTS MAX ${ch.num}${cleanS}</display-name>`);
+                    generatedNames.push(`  <display-name>${cleanP}beIN SP⚽RTS MAX ${ch.num} AR${cleanS}</display-name>`);
+                    generatedNames.push(`  <display-name>${cleanP}beIN SPORTS MAX ${ch.num} AR${cleanS}</display-name>`);
+                  } else if (ch.type === "xtra") {
+                    generatedNames.push(`  <display-name>${cleanP}beIN SP⚽RTS ${ch.num} XTRA${cleanS}</display-name>`);
+                    generatedNames.push(`  <display-name>${cleanP}beIN SPORTS ${ch.num} XTRA${cleanS}</display-name>`);
+                  }
+                });
+              });
+
+              let uniqueNames = [...new Set(generatedNames)].join("\n");
+              let updatedMatch = match.replace("</channel>", `\n${uniqueNames}\n</channel>`);
+              xml = xml.replace(match, updatedMatch);
+            }
+          });
+
+          fs.writeFileSync("guide_mapped.xml", xml, "utf8");
+          console.log("Advanced suffix mapping applied successfully!");
+          '
+
+      - name: Clean Workspace Environment
+        run: |
+          rm -rf epg-engine
+
+      - name: Deploy Test Guide to GitHub Pages
+        uses: jamesives/github-pages-deploy-action@v4
+        with:
+          folder: .
+          branch: gh-pages
+          target-folder: .
