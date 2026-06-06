@@ -1,0 +1,35 @@
+name: Update beIN Sports EPG
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Automatically runs every night at 2:00 AM
+  workflow_dispatch: # Gives you a manual button to run it whenever you want
+
+jobs:
+  grab-epg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Grab beIN Sports Guide
+        run: npm run grab -- --sites=bein.com
+
+      - name: Move guide to deployment folder
+        run: |
+          mkdir -p build
+          mv guide.xml build/guide.xml
+
+      - name: Deploy Finished Guide to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          branch: gh-pages
