@@ -31,19 +31,24 @@ jobs:
           cd epg-engine
           npm install
 
-      - name: Update Channel List Natively
+      - name: Update Channel List
         run: |
           cd epg-engine
           npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
 
-      - name: Download the Guide Natively
+      - name: Grab EPG Data
         run: |
           cd epg-engine
           npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
 
-      - name: Deploy Native Guide to GitHub Pages
+      - name: Move File to Root
+        run: |
+          mv guide.xml ./guide.xml
+
+      - name: Deploy to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
         with:
           folder: .
           branch: gh-pages
           target-folder: .
+          include: guide.xml
