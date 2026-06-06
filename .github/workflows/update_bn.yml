@@ -31,21 +31,15 @@ jobs:
           cd epg-engine
           npm install
 
-      - name: Update Channel List Natively (From README)
+      - name: Update Channel List Natively
         run: |
           cd epg-engine
-          # This command dynamically parses and repairs any empty xmltv_id fields natively
           npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
 
-      - name: Download the Guide Natively (From README)
+      - name: Download the Guide Natively
         run: |
           cd epg-engine
-          # Grabs the newly completed channel mapping list
           npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
-
-      - name: Clean Workspace Environment
-        run: |
-          rm -rf epg-engine
 
       - name: Deploy Native Guide to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
