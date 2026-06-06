@@ -41,14 +41,11 @@ jobs:
           cd epg-engine
           npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
 
-      - name: Move File to Root
-        run: |
-          mv guide.xml ./guide.xml
-
       - name: Deploy to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
         with:
           folder: .
           branch: gh-pages
           target-folder: .
-          include: guide.xml
+          # This forces the action to include the guide.xml file
+          single-commit: true
