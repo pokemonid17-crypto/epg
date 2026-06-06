@@ -25,7 +25,17 @@ jobs:
 
       - name: Grab beIN Sports Guide
         run: |
-          epg-grabber --site=beinsports.com --output=guide.xml
+          epg-grabber --site=bein.com --output=guide.xml
+
+      - name: Fix Channel Names to Human-Readable Text
+        run: |
+          # Safe, native text replacement to injection names right alongside IDs
+          sed -i 's/channel="beINSports1.qa@MENA"><display-name>1<\/display-name>/channel="beINSports1.qa@MENA"><display-name>beIN Sports 1 HD<\/display-name>/g' guide.xml
+          sed -i 's/channel="beINSports2.qa@MENA"><display-name>2<\/display-name>/channel="beINSports2.qa@MENA"><display-name>beIN Sports 2 HD<\/display-name>/g' guide.xml
+          sed -i 's/channel="beINSports3.qa@MENA"><display-name>3<\/display-name>/channel="beINSports3.qa@MENA"><display-name>beIN Sports 3 HD<\/display-name>/g' guide.xml
+          sed -i 's/channel="beINSports4.qa@MENA"><display-name>4<\/display-name>/channel="beINSports4.qa@MENA"><display-name>beIN Sports 4 HD<\/display-name>/g' guide.xml
+          sed -i 's/channel="beINSportsMax1.qa@MENA"><display-name>1<\/display-name>/channel="beINSportsMax1.qa@MENA"><display-name>beIN Sports Max 1<\/display-name>/g' guide.xml
+          sed -i 's/channel="beINSportsMax2.qa@MENA"><display-name>2<\/display-name>/channel="beINSportsMax2.qa@MENA"><display-name>beIN Sports Max 2<\/display-name>/g' guide.xml
 
       - name: Deploy Finished Guide to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
