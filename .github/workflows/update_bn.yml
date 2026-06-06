@@ -25,23 +25,7 @@ jobs:
 
       - name: Grab beIN Sports Guide
         run: |
-          epg-grabber --site=bein.com --output=guide_raw.xml
-
-      - name: Clean and Format Channel Names
-        run: |
-          cat << 'EOF' > fix_names.js
-          const fs = require('fs');
-          let xml = fs.readFileSync('guide_raw.xml', 'utf8');
-          
-          // Replaces numeric names with clean, identifiable names based on site_id
-          xml = xml.replace(/<channel id="(.*?)">[\s\S]*?<display-name>(.*?)<\/display-name>/g, (match, id) => {
-            let cleanName = id.replace('.qa@MENA', '').replace('beINSports', 'beIN Sports ');
-            return `<channel id="${id}">\n    <display-name>${cleanName}</display-name>`;
-          });
-          
-          fs.writeFileSync('guide.xml', xml);
-          EOF
-          node fix_names.js
+          epg-grabber --site=beinsports.com --output=guide.xml
 
       - name: Deploy Finished Guide to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
