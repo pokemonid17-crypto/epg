@@ -12,32 +12,44 @@ jobs:
   grab-epg:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout Your Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Clone Official IPTV-Org EPG Engine
+        run: |
+          git clone --depth 1 -b master https://github.com/iptv-org/epg.git epg-engine
+
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: epg-engine/package-lock.json
 
-      - name: Install EPG Grabber
-        run: npm install -g @iptv-org/epg
-
-      - name: Grab beIN Sports Guide
+      - name: Install EPG Engine Dependencies
         run: |
-          epg-grabber --site=bein.com --output=guide.xml
+          cd epg-engine
+          npm install
 
-      - name: Fix Channel Names to Human-Readable Text
+      - name: Run Official Grabber for bein.com
         run: |
-          # Safe, native text replacement to injection names right alongside IDs
-          sed -i 's/channel="beINSports1.qa@MENA"><display-name>1<\/display-name>/channel="beINSports1.qa@MENA"><display-name>beIN Sports 1 HD<\/display-name>/g' guide.xml
-          sed -i 's/channel="beINSports2.qa@MENA"><display-name>2<\/display-name>/channel="beINSports2.qa@MENA"><display-name>beIN Sports 2 HD<\/display-name>/g' guide.xml
-          sed -i 's/channel="beINSports3.qa@MENA"><display-name>3<\/display-name>/channel="beINSports3.qa@MENA"><display-name>beIN Sports 3 HD<\/display-name>/g' guide.xml
-          sed -i 's/channel="beINSports4.qa@MENA"><display-name>4<\/display-name>/channel="beINSports4.qa@MENA"><display-name>beIN Sports 4 HD<\/display-name>/g' guide.xml
-          sed -i 's/channel="beINSportsMax1.qa@MENA"><display-name>1<\/display-name>/channel="beINSportsMax1.qa@MENA"><display-name>beIN Sports Max 1<\/display-name>/g' guide.xml
-          sed -i 's/channel="beINSportsMax2.qa@MENA"><display-name>2<\/display-name>/channel="beINSportsMax2.qa@MENA"><display-name>beIN Sports Max 2<\/display-name>/g' guide.xml
+          cd epg-engine
+          npm run grab --- --sites=bein.com --output=../guide_raw.xml
 
-      - name: Deploy Finished Guide to GitHub Pages
+      - name: Clean and Format Channel Names
+        run: |
+          # Safe text transformation to map the names alongside the IDs natively
+          sed 's/channel="beINSports1.qa@MENA"><display-name>1<\/display-name>/channel="beINSports1.qa@MENA"><display-name>beIN Sports 1 HD<\/display-name>/g' guide_raw.xml > guide_step1.xml
+          sed 's/channel="beINSports2.qa@MENA"><display-name>2<\/display-name>/channel="beINSports2.qa@MENA"><display-name>beIN Sports 2 HD<\/display-name>/g' guide_step1.xml > guide_step2.xml
+          sed 's/channel="beINSports3.qa@MENA"><display-name>3<\/display-name>/channel="beINSports3.qa@MENA"><display-name>beIN Sports 3 HD<\/display-name>/g' guide_step2.xml > guide_step3.xml
+          sed 's/channel="beINSports4.qa@MENA"><display-name>4<\/display-name>/channel="beINSports4.qa@MENA"><display-name>beIN Sports 4 HD<\/display-name>/g' guide_step3.xml > guide_step4.xml
+          sed 's/channel="beINSportsMax1.qa@MENA"><display-name>1<\/display-name>/channel="beINSportsMax1.qa@MENA"><display-name>beIN Sports Max 1<\/display-name>/g' guide_step4.xml > guide_step5.xml
+          sed 's/channel="beINSportsMax2.qa@MENA"><display-name>2<\/display-name>/channel="beINSportsMax2.qa@MENA"><display-name>beIN Sports Max 2<\/display-name>/g' guide_step5.xml > guide.xml
+          
+          # Clean up temporary steps
+          rm -rf guide_raw.xml guide_step1.xml guide_step2.xml guide_step3.xml guide_step4.xml guide_step5.xml epg-engine
+
+      - name: Deploy Clean Guide to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
         with:
           folder: .
