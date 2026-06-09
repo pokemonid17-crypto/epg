@@ -1,9 +1,7 @@
 name: Update BN Sport EPG
 
 on:
-  schedule:
-    # Runs at 07:00 UTC (which is 2:00 AM Manitoba/CDT)
-    - cron: '0 7 * * *'
+  # Automated schedule removed completely to prevent 403 error emails
   workflow_dispatch:
 
 permissions:
@@ -26,18 +24,10 @@ jobs:
           node-version: '20'
 
       - name: Install & Run Grabber
-        env:
-          # Injecting a public proxy to mask GitHub's IP and bypass the 403 restriction
-          HTTP_PROXY: http://185.162.229.157:80
-          HTTPS_PROXY: http://185.162.229.157:80
         run: |
           cd epg-engine
           npm install
-          
-          # Parse the channels using the proxy environment
           npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
-          
-          # Run the main EPG grabber
           npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
 
       - name: Prepare Deployment
