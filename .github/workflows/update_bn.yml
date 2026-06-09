@@ -2,7 +2,8 @@ name: Update BN Sport EPG
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    # Runs at 07:00 UTC (which is 2:00 AM Manitoba/CDT)
+    - cron: '0 7 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,8 +29,9 @@ jobs:
         run: |
           cd epg-engine
           npm install
-          npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
-          npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
+          # Added --userAgent to mimic a browser and bypass 403 blocks
+          npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar --userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml --userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
       - name: Prepare Deployment
         run: |
