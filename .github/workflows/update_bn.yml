@@ -26,12 +26,19 @@ jobs:
           node-version: '20'
 
       - name: Install & Run Grabber
+        env:
+          # Injecting a public proxy to mask GitHub's IP and bypass the 403 restriction
+          HTTP_PROXY: http://185.162.229.157:80
+          HTTPS_PROXY: http://185.162.229.157:80
         run: |
           cd epg-engine
           npm install
-          # Added --userAgent to mimic a browser and bypass 403 blocks
-          npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar --userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-          npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml --userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          
+          # Parse the channels using the proxy environment
+          npm run channels:parse -- --config=./sites/beinsports.com/beinsports.com.config.js --output=./sites/beinsports.com/beinsports.com_mena-ar.channels.xml --set=region:mena --set=lang:ar
+          
+          # Run the main EPG grabber
+          npm run grab -- --channels=sites/beinsports.com/beinsports.com_mena-ar.channels.xml --output=../guide.xml
 
       - name: Prepare Deployment
         run: |
