@@ -1,4 +1,4 @@
-name: Update beIN Sports EPG
+name: Update BN Sport EPG
 
 on:
   schedule:
@@ -39,6 +39,7 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: jamesives/github-pages-deploy-action@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           folder: public
           branch: gh-pages
           target-folder: .
